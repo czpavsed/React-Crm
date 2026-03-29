@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 
 import './table.css'
 
@@ -19,6 +19,12 @@ const Table = props => {
     }
 
     const [currPage, setCurrPage] = useState(0)
+
+    useEffect(() => {
+        const nextData = props.limit && props.bodyData ? props.bodyData.slice(0, Number(props.limit)) : props.bodyData
+        setDataShow(nextData || [])
+        setCurrPage(0)
+    }, [props.bodyData, props.limit])
 
     const selectPage = page => {
         const start = Number(props.limit) * page

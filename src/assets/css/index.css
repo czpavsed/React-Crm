@@ -5,19 +5,26 @@
     --second-bg: #fafafb;
     --txt-color: #455560;
     --txt-white: #fff;
-    --main-color: #349eff;
-    --second-color: #62b4ff;
+    --main-color: #d68102;
+    --second-color: #fca11a;
     --box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
 
     --main-bg-light: #ffffff;
     --second-bg-light: #fafafb;
     --txt-color-light: #455560;
     --box-shadow-light: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+    --form-control-bg-light: #f4f7fc;
+    --form-control-border-light: #cfd7e6;
 
     --main-bg-dark: #2d2d2d;
     --second-bg-dark: #202020;
     --txt-color-dark: #bbbbbb;
     --box-shadow-dark: rgba(0, 0, 0, 0.2) 0px 5px 10px;
+    --form-control-bg-dark: #3a3f48;
+    --form-control-border-dark: #565d68;
+
+    --form-control-bg: var(--form-control-bg-light);
+    --form-control-border: var(--form-control-border-light);
 
     --main-color-blue: #349eff;
     --second-color-blue: #62b4ff;
@@ -35,6 +42,7 @@
     --second-color-orange: #fca11a;
 
     --sidebar-width: 300px;
+    --sidebar-collapsed-width: 92px;
     --border-radius: 15px;
     --topnav-height: 110px;
     --transition-cubic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -150,4 +158,272 @@ input:focus {
 .orange-color {
     background-color: var(--main-color-orange);
     color: #fff;
+}
+
+.btn {
+    border-radius: 10px;
+    padding: 10px 14px;
+    border: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.98rem;
+    line-height: 1.25;
+}
+
+.btn-primary {
+    color: #fff;
+    background-image: linear-gradient(to right, var(--main-color), var(--second-color));
+}
+
+.btn-danger {
+    color: #fff;
+    background-color: #d43d3d;
+}
+
+.btn-blue {
+    color: #fff;
+    background-image: linear-gradient(to right, var(--main-color-blue), var(--second-color-blue));
+}
+
+.btn-blue:hover,
+.btn-blue:focus {
+    color: #fff;
+}
+
+.crm-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px auto auto;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.crm-toolbar--jobs-all {
+    grid-template-columns: minmax(0, 1fr) 220px 220px auto auto;
+}
+
+.crm-scope-btn {
+    gap: 8px;
+}
+
+.crm-toolbar input,
+.crm-toolbar select,
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--form-control-border);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.4;
+    color: var(--txt-color);
+    background: var(--form-control-bg);
+}
+
+.form-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.crm-form-layout {
+    gap: 14px;
+}
+
+.crm-form-row {
+    display: grid;
+    gap: 12px;
+}
+
+.crm-form-row--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.crm-form-row--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.crm-form-field {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+}
+
+.crm-form-field--span-2 {
+    grid-column: span 2;
+}
+
+.crm-form-note {
+    font-size: 0.9rem;
+    color: #66717c;
+}
+
+.form-grid label {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.crm-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+}
+
+.crm-switch-row {
+    display: flex;
+    gap: 10px;
+}
+
+.crm-customer-field {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.crm-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 36, 51, 0.48);
+    display: grid;
+    place-items: center;
+    z-index: 1500;
+    padding: 16px;
+}
+
+.crm-modal-card {
+    width: min(760px, 100%);
+    max-height: 86vh;
+    overflow: hidden;
+    background: var(--main-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 18px;
+    display: grid;
+    gap: 12px;
+}
+
+.crm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.crm-modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.crm-modal-close-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--form-control-border);
+    background: var(--form-control-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--txt-color);
+}
+
+.crm-modal-close-btn > i {
+    font-size: 1.25rem;
+}
+
+.crm-modal-header h3 {
+    font-size: 1.15rem;
+}
+
+.crm-modal-search {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--form-control-border);
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.4;
+    color: var(--txt-color);
+    background: var(--form-control-bg);
+}
+
+.crm-customer-list {
+    display: grid;
+    gap: 8px;
+    overflow-y: auto;
+    max-height: min(56vh, 520px);
+    padding-right: 4px;
+}
+
+.crm-customer-list__item {
+    border: 1px solid var(--form-control-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.crm-customer-list__item p {
+    margin-top: 4px;
+}
+
+.auth-wrap {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: var(--second-bg);
+    padding: 16px;
+}
+
+.auth-card {
+    width: min(520px, 100%);
+}
+
+.auth-switch {
+    margin-top: 12px;
+}
+
+.auth-switch-link {
+    border: 0;
+    background: transparent;
+    color: var(--main-color);
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+.auth-error,
+.crm-error {
+    margin-top: 12px;
+    color: #c22f2f;
+    font-weight: 600;
+}
+
+@media only screen and (max-width: 900px) {
+    .crm-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .crm-form-row--4 {
+        grid-template-columns: 1fr;
+    }
+
+    .crm-form-row--2 {
+        grid-template-columns: 1fr;
+    }
+
+    .crm-form-field--span-2 {
+        grid-column: auto;
+    }
+
+    .crm-customer-field,
+    .crm-customer-list__item {
+        grid-template-columns: 1fr;
+    }
 }

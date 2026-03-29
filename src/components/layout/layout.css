@@ -6,6 +6,11 @@
     padding-left: var(--sidebar-width);
     background-color: var(--second-bg);
     min-height: 100vh;
+    transition: padding-left 0.25s ease;
+}
+
+.layout.sidebar-collapsed .layout__content {
+    padding-left: var(--sidebar-collapsed-width);
 }
 
 .layout__content-main {

@@ -26,12 +26,15 @@ const SidebarItem = props => {
 
 const Sidebar = props => {
 
-    const activeItem = sidebar_items.findIndex(item => item.route === props.location.pathname)
+    const activeItem = sidebar_items.findIndex(item => {
+        if (item.route === '/') return props.location.pathname === '/'
+        return props.location.pathname === item.route || props.location.pathname.startsWith(`${item.route}/`)
+    })
 
     return (
-        <div className='sidebar'>
+        <div className={`sidebar ${props.collapsed ? 'sidebar--collapsed' : ''}`}>
             <div className="sidebar__logo">
-                <img src={logo} alt="company logo" />RISK RADAR
+                <img src={logo} alt="Derator logo" />
             </div>
             {
                 sidebar_items.map((item, index) => (

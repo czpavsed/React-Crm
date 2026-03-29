@@ -3,6 +3,8 @@
     --second-bg: var(--second-bg-light);
     --txt-color: var(--txt-color-light);
     --box-shadow: var(--box-shadow-light);
+    --form-control-bg: var(--form-control-bg-light);
+    --form-control-border: var(--form-control-border-light);
 }
 
 .theme-mode-dark {
@@ -10,6 +12,8 @@
     --second-bg: var(--second-bg-dark);
     --txt-color: var(--txt-color-dark);
     --box-shadow: var(--box-shadow-dark);
+    --form-control-bg: var(--form-control-bg-dark);
+    --form-control-border: var(--form-control-border-dark);
 }
 
 .theme-color-blue {

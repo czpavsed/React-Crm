@@ -15,12 +15,13 @@
     box-shadow: var(--box-shadow);
     border-radius: var(--border-radius);
     overflow: hidden;
+    width: min(520px, 100%);
 }
 
 .topnav__search > input {
     height: 100%;
     width: 100%;
-    padding: 10px 60px 10px 20px;
+    padding: 10px 60px 10px 68px;
     font-size: 1rem;
     border-radius: var(--border-radius);
     color: var(--txt-color);
@@ -31,6 +32,12 @@
     font-size: 1.5rem;
     position: absolute;
     right: 20px;
+}
+
+.topnav__sidebar-toggle {
+    position: absolute;
+    left: 14px;
+    z-index: 2;
 }
 
 .topnav__right {
@@ -77,4 +84,30 @@
 .topnav__right-user__name {
     font-size: 1rem;
     font-weight: 600;
+}
+
+.topnav__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #fff;
+    background-image: linear-gradient(to right, var(--main-color), var(--second-color));
+}
+
+.topnav__icon-btn {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-image: linear-gradient(to right, var(--main-color), var(--second-color));
+    color: #fff;
+    box-shadow: var(--box-shadow);
+}
+
+.topnav__icon-btn > i {
+    font-size: 1.2rem;
 }

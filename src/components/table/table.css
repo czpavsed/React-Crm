@@ -27,6 +27,11 @@ tbody > tr:hover {
     color: var(--txt-white);
 }
 
+.table-action-btn {
+    padding: 6px 12px;
+    min-width: 90px;
+}
+
 .table__pagination {
     display: flex;
     width: 100%;
