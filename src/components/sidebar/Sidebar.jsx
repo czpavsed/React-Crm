@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import './sidebar.css'
 
 import logo from '../../assets/images/logo.png'
+import logoSmall from '../../assets/images/Logo_small.png'
 
 import sidebar_items from '../../assets/JsonData/sidebar_routes.json'
 
@@ -34,7 +35,7 @@ const Sidebar = props => {
     return (
         <div className={`sidebar ${props.collapsed ? 'sidebar--collapsed' : ''}`}>
             <div className="sidebar__logo">
-                <img src={logo} alt="Derator logo" />
+                <img src={props.collapsed ? logoSmall : logo} alt="Derator logo" />
             </div>
             <div className="sidebar__menu">
                 {

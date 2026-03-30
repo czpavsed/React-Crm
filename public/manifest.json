@@ -1,7 +1,12 @@
 {
-  "short_name": "CRM Derator",
-  "name": "CRM Derator s.r.o.",
+  "short_name": "Derator CRM",
+  "name": "Derator CRM",
   "icons": [
+    {
+      "src": "logo_small.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
     {
       "src": "favicon.svg",
       "sizes": "any",
