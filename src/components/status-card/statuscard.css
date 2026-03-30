@@ -27,11 +27,26 @@
     text-align: center;
     z-index: 1;
     text-transform: capitalize;
+    min-width: 0;
 }
 
 .status-card__info > h4 {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.status-card__info > span {
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.2;
+    opacity: 0.85;
+    word-break: break-word;
+}
+
+.status-card__count--compact {
+    font-size: 1.5rem !important;
 }
 
 .status-card::before {

@@ -52,13 +52,8 @@ const Dashboard = ({ email }) => {
     const canViewAll = DEV_VIEW_ALL_EMAILS.has(normalizedEmail)
 
     const [jobs, setJobs] = useState([])
-    const [scope, setScope] = useState(canViewAll ? 'all' : 'mine')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-
-    useEffect(() => {
-        setScope(canViewAll ? 'all' : 'mine')
-    }, [canViewAll])
 
     useEffect(() => {
         let cancelled = false
@@ -69,7 +64,7 @@ const Dashboard = ({ email }) => {
                 setError('')
             }
             try {
-                const wantsAll = canViewAll && scope === 'all'
+                const wantsAll = canViewAll
                 const list = wantsAll
                     ? await fetchAllJobsForScope({
                         emails: TECHNICI.map((item) => item.email),
@@ -95,7 +90,7 @@ const Dashboard = ({ email }) => {
         return () => {
             cancelled = true
         }
-    }, [email, canViewAll, scope])
+    }, [email, canViewAll])
 
     const stats = useMemo(() => {
         const now = new Date()
@@ -164,28 +159,14 @@ const Dashboard = ({ email }) => {
         <div>
             <h2 className="page-header">Dashboard technika</h2>
 
-            {canViewAll ? (
-                <div className="card" style={{ padding: 16 }}>
-                    <button
-                        type="button"
-                        className="btn btn-blue crm-scope-btn"
-                        onClick={() => setScope((prev) => (prev === 'all' ? 'mine' : 'all'))}
-                        title={scope === 'all' ? 'Přepnout na moje zakázky' : 'Přepnout na všechny zakázky'}
-                    >
-                        <i className={`bx ${scope === 'all' ? 'bx-group' : 'bx-user'}`}></i>
-                        {scope === 'all' ? 'Dashboard: Vidím vše' : 'Dashboard: Vidím sebe'}
-                    </button>
-                </div>
-            ) : null}
-
             {error ? <div className="card"><p className="crm-error">{error}</p></div> : null}
 
             <div className="row">
                 <div className="col-3 col-md-6 col-sm-12">
-                    <StatusCard icon='bx bx-briefcase-alt-2' count={loading ? '...' : stats.thisMonthCount} title={`Počet zakázek (${monthLabels.thisMonth})`} />
+                    <StatusCard icon='bx bx-briefcase-alt-2' count={loading ? '...' : stats.thisMonthCount} title={`Zakázky ${monthLabels.thisMonth}`} />
                 </div>
                 <div className="col-3 col-md-6 col-sm-12">
-                    <StatusCard icon='bx bx-history' count={loading ? '...' : stats.lastMonthCount} title={`Počet zakázek (${monthLabels.lastMonth})`} />
+                    <StatusCard icon='bx bx-history' count={loading ? '...' : stats.lastMonthCount} title={`Zakázky ${monthLabels.lastMonth}`} />
                 </div>
                 <div className="col-3 col-md-6 col-sm-12">
                     <StatusCard

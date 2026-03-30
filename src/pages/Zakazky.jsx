@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Table from '../components/table/Table';
-import { fetchAllJobsForScope, fetchCustomers, fetchJobsByEmail } from '../lib/crmClient';
+import { fetchCustomers, fetchJobsByEmail, fetchJobsPage } from '../lib/crmClient';
 
 const DEV_VIEW_ALL_EMAILS = new Set(['pavel.sedlacek@derator.cz']);
 const TECHNICI = [
@@ -33,6 +33,17 @@ const SKUDCI = [
 ];
 
 const normalize = (value) => String(value || '').trim().toLowerCase();
+const PAGE_SIZE = 100;
+const SEARCH_PAGE_SIZE = 500;
+const PAGE_REQUEST_GAP_MS = 120;
+
+const mergeUniqueJobs = (base, extra) => {
+  const seen = new Set((base || []).map((item) => String(item.ZakazkaId)));
+  const added = (extra || []).filter((item) => !seen.has(String(item.ZakazkaId)));
+  return [...(base || []), ...added];
+};
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const formatCurrency = (value) => {
   const n = Number(value);
@@ -77,21 +88,22 @@ const Zakazky = ({ email }) => {
 
   const [jobs, setJobs] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [payment, setPayment] = useState('all');
-  const [scope, setScope] = useState(canViewAll ? 'all' : 'mine');
   const [technikId, setTechnikId] = useState('all');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
-  const showTechnicianFilter = canViewAll && scope === 'all';
+  const showTechnicianFilter = canViewAll;
+  const hasSearch = search.trim().length > 0;
+  const activeSearchRequestRef = useRef(0);
 
   useEffect(() => {
     if (!showTechnicianFilter) setTechnikId('all');
   }, [showTechnicianFilter]);
-
-  useEffect(() => {
-    setScope(canViewAll ? 'all' : 'mine');
-  }, [canViewAll]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,23 +114,26 @@ const Zakazky = ({ email }) => {
         setError('');
       }
 
-      const wantsAll = canViewAll && scope === 'all';
+      const wantsAll = canViewAll;
 
       try {
-        let jobRequest;
         if (wantsAll) {
-          jobRequest = fetchAllJobsForScope({
-            emails: TECHNICI.map((item) => item.email),
-            currentUserEmail: email,
-          });
-        } else {
-          jobRequest = fetchJobsByEmail(email);
+          const customerList = await fetchCustomers();
+          if (!cancelled) {
+            setCustomers(customerList);
+          }
+          return;
         }
+
+        let jobRequest;
+        jobRequest = fetchJobsByEmail(email);
 
         const [jobList, customerList] = await Promise.all([jobRequest, fetchCustomers()]);
         if (!cancelled) {
           setJobs(jobList);
           setCustomers(customerList);
+          setHasMore(false);
+          setPage(1);
         }
       } catch (e) {
         if (!cancelled) {
@@ -136,7 +151,129 @@ const Zakazky = ({ email }) => {
     return () => {
       cancelled = true;
     };
-  }, [canViewAll, email, scope]);
+  }, [canViewAll, email]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    const requestId = activeSearchRequestRef.current + 1;
+    activeSearchRequestRef.current = requestId;
+
+    const run = async () => {
+      const wantsAll = canViewAll;
+      if (!wantsAll) return;
+
+      const selectedTechnik = TECHNICI.find((item) => item.id === technikId) || null;
+      const technicianEmail = selectedTechnik ? selectedTechnik.email : '';
+
+      if (!cancelled) {
+        setLoading(true);
+        setError('');
+      }
+
+      try {
+        const pageSize = search.trim() ? SEARCH_PAGE_SIZE : PAGE_SIZE;
+        const result = await fetchJobsPage({
+          email,
+          technicianEmail,
+          search,
+          page: 1,
+          pageSize,
+          signal: controller.signal,
+        });
+
+        let mergedItems = result.items || [];
+        let nextHasMore = Boolean(result.hasMore);
+        let loadedPage = 1;
+        const q = search.trim().toLowerCase();
+
+        // During search, always load all pages so results are not limited by pagination.
+        while (!cancelled && q && nextHasMore) {
+          await delay(PAGE_REQUEST_GAP_MS);
+          const nextPage = loadedPage + 1;
+          const next = await fetchJobsPage({
+            email,
+            technicianEmail,
+            search,
+            page: nextPage,
+            pageSize,
+            signal: controller.signal,
+          });
+
+          if (!next.items || next.items.length === 0) {
+            nextHasMore = false;
+            break;
+          }
+
+          const beforeCount = mergedItems.length;
+          mergedItems = mergeUniqueJobs(mergedItems, next.items || []);
+          if (mergedItems.length === beforeCount) {
+            nextHasMore = false;
+            break;
+          }
+          nextHasMore = Boolean(next.hasMore);
+          loadedPage = nextPage;
+        }
+
+        if (!cancelled && activeSearchRequestRef.current === requestId) {
+          setJobs(mergedItems);
+          setHasMore(q ? false : nextHasMore);
+          setPage(loadedPage);
+        }
+      } catch (e) {
+        if (controller.signal.aborted) return;
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'Načtení zakázek selhalo');
+          setJobs([]);
+          setHasMore(false);
+          setPage(1);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [canViewAll, email, technikId, search]);
+
+  const loadMore = async () => {
+    if (loadingMore || loading || !hasMore) return;
+
+    const wantsAll = canViewAll;
+    if (!wantsAll) return;
+
+    const selectedTechnik = TECHNICI.find((item) => item.id === technikId) || null;
+    const technicianEmail = selectedTechnik ? selectedTechnik.email : '';
+    const nextPage = page + 1;
+
+    setLoadingMore(true);
+    setError('');
+
+    try {
+      const result = await fetchJobsPage({
+        email,
+        technicianEmail,
+        search,
+        page: nextPage,
+        pageSize: PAGE_SIZE,
+      });
+
+      setJobs((prev) => mergeUniqueJobs(prev, result.items || []));
+      setHasMore(Boolean(result.hasMore));
+      setPage(nextPage);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Načtení dalších zakázek selhalo');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const customerMap = useMemo(() => {
     const map = new Map();
@@ -194,8 +331,11 @@ const Zakazky = ({ email }) => {
         <div className={`crm-toolbar ${showTechnicianFilter ? 'crm-toolbar--jobs-all' : ''}`}>
           <input
             placeholder="Hledat podle názvu, zákazníka, adresy, popisu..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setSearch(searchInput.trim());
+            }}
           />
           <select value={payment} onChange={(e) => setPayment(e.target.value)}>
             <option value="all">Všechny platby</option>
@@ -209,17 +349,6 @@ const Zakazky = ({ email }) => {
                 <option key={item.id} value={item.id}>{item.fullName.split(' ')[0] || item.fullName}</option>
               ))}
             </select>
-          ) : null}
-          {canViewAll ? (
-            <button
-              type="button"
-              className="btn btn-blue crm-scope-btn"
-              onClick={() => setScope((prev) => (prev === 'all' ? 'mine' : 'all'))}
-              title={scope === 'all' ? 'Přepnout na moje zakázky' : 'Přepnout na všechny zakázky'}
-            >
-              <i className={`bx ${scope === 'all' ? 'bx-group' : 'bx-user'}`}></i>
-              {scope === 'all' ? 'Vidím vše' : 'Vidím sebe'}
-            </button>
           ) : null}
           <Link className="btn btn-primary" to="/zakazky/nova">
             Nová zakázka
@@ -253,6 +382,18 @@ const Zakazky = ({ email }) => {
             );
           }}
         />
+
+        {showTechnicianFilter && !hasSearch ? (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+            {hasMore ? (
+              <button type="button" className="btn btn-blue" disabled={loadingMore || loading} onClick={loadMore}>
+                {loadingMore ? 'Načítám další...' : 'Načíst další zakázky'}
+              </button>
+            ) : (
+              <span style={{ color: '#777' }}>Další zakázky nejsou k dispozici</span>
+            )}
+          </div>
+        ) : null}
       </div>
     </div>
   );

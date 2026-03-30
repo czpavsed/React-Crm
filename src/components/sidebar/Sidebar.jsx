@@ -36,17 +36,31 @@ const Sidebar = props => {
             <div className="sidebar__logo">
                 <img src={logo} alt="Derator logo" />
             </div>
-            {
-                sidebar_items.map((item, index) => (
-                    <Link to={item.route} key={index}>
-                        <SidebarItem
-                            title={item.display_name}
-                            icon={item.icon}
-                            active={index === activeItem}
-                        />
-                    </Link>
-                ))
-            }
+            <div className="sidebar__menu">
+                {
+                    sidebar_items.map((item, index) => (
+                        <Link to={item.route} key={index}>
+                            <SidebarItem
+                                title={item.display_name}
+                                icon={item.icon}
+                                active={index === activeItem}
+                            />
+                        </Link>
+                    ))
+                }
+            </div>
+            <div className="sidebar__footer">
+                <button
+                    className="sidebar__collapse-btn"
+                    type="button"
+                    onClick={() => props.onToggleCollapse && props.onToggleCollapse()}
+                    title={props.collapsed ? 'Rozbalit menu' : 'Sbalit menu'}
+                    aria-label={props.collapsed ? 'Rozbalit menu' : 'Sbalit menu'}
+                >
+                    <i className={`bx ${props.collapsed ? 'bx-chevrons-right' : 'bx-chevrons-left'}`}></i>
+                    <span>{props.collapsed ? 'Rozbalit menu' : 'Sbalit menu'}</span>
+                </button>
+            </div>
         </div>
     )
 }

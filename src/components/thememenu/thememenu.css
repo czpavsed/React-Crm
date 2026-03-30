@@ -60,3 +60,32 @@
 .mode-list__color.active > i {
     transform: scale(1);
 }
+
+.theme-toggle-btn {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color: transparent;
+    color: var(--txt-color);
+    border: 1px solid rgba(140, 140, 140, 0.28);
+    transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.theme-toggle-btn:hover,
+.theme-toggle-btn:focus {
+    background-color: rgba(140, 140, 140, 0.12);
+    border-color: rgba(140, 140, 140, 0.42);
+}
+
+.theme-toggle__icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}

@@ -61,28 +61,108 @@ function unwrapListResponse(raw) {
   return [];
 }
 
+function wait(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (!ms || ms <= 0) {
+      resolve();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (signal) {
+        signal.removeEventListener('abort', onAbort);
+      }
+      resolve();
+    }, ms);
+
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        onAbort();
+        return;
+      }
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
+  });
+}
+
+function parseRetryAfterMs(res) {
+  const value = (res && res.headers && res.headers.get('retry-after')) || '';
+  const asNumber = Number(value);
+  if (Number.isFinite(asNumber) && asNumber > 0) {
+    return Math.round(asNumber * 1000);
+  }
+  return null;
+}
+
+function unwrapPagedResponse(raw, page, pageSize) {
+  const items = unwrapListResponse(raw).map((item) => normalizeJob(item));
+  const totalCandidates = [
+    raw && raw.total,
+    raw && raw.totalCount,
+    raw && raw.count,
+  ];
+  const total = totalCandidates.find((value) => Number.isFinite(Number(value)));
+  const numericTotal = total === undefined ? null : Number(total);
+  const explicitHasMore = raw && typeof raw === 'object' ? raw.hasMore : undefined;
+  const hasMore =
+    typeof explicitHasMore === 'boolean'
+      ? explicitHasMore
+      : numericTotal !== null
+        ? page * pageSize < numericTotal
+        : items.length >= pageSize;
+
+  return {
+    items,
+    total: numericTotal,
+    hasMore,
+  };
+}
+
 async function request(path, options) {
   const url = `${getBaseUrl()}${path}`;
   const authorization = await getAuthorizationHeader();
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: authorization,
-      'Content-Type': 'application/json',
-      ...(options && options.headers ? options.headers : {}),
-    },
-  });
+  const maxAttempts = 4;
+  const method = (options && options.method ? String(options.method) : 'GET').toUpperCase();
+  const isSafeRetry = method === 'GET';
+  const signal = options && options.signal;
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    const err = new Error(text || `HTTP ${res.status}`);
-    err.status = res.status;
-    throw err;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        Authorization: authorization,
+        'Content-Type': 'application/json',
+        ...(options && options.headers ? options.headers : {}),
+      },
+    });
+
+    if (res.status === 429 && isSafeRetry && attempt < maxAttempts) {
+      const retryAfterMs = parseRetryAfterMs(res);
+      const backoffMs = retryAfterMs || 300 * Math.pow(2, attempt - 1);
+      await wait(backoffMs, signal);
+      continue;
+    }
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      const err = new Error(text || `HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) return null;
+    return res.json().catch(() => null);
   }
 
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) return null;
-  return res.json().catch(() => null);
+  const err = new Error('HTTP 429');
+  err.status = 429;
+  throw err;
 }
 
 function isForbidden(error) {
@@ -97,7 +177,7 @@ function isBadRequest(error) {
   return status === 400 || /\b400\b/.test(String(message || ''));
 }
 
-async function fetchJobsEnhanced({ email, technicianEmail, page, pageSize, sortBy, sortDir, includeTotal } = {}) {
+async function fetchJobsEnhanced({ email, technicianEmail, page, pageSize, sortBy, sortDir, includeTotal, signal } = {}) {
   const path = getPath('REACT_APP_CRM_API_ZAKAZKY_LIST_PATH', 'api/protokoly-zakazky-list');
   const normalizedEmail = String(email || '').trim();
   const normalizedTechnicianEmail = String(technicianEmail || '').trim();
@@ -110,8 +190,54 @@ async function fetchJobsEnhanced({ email, technicianEmail, page, pageSize, sortB
     sortDir,
     includeTotal,
   });
-  const raw = await request(`${path}${query}`, { method: 'GET' });
+  const raw = await request(`${path}${query}`, { method: 'GET', signal });
   return unwrapListResponse(raw).map((item) => normalizeJob(item));
+}
+
+export async function fetchJobsPage({
+  email,
+  technicianEmail,
+  search,
+  page = 1,
+  pageSize = 100,
+  sortBy = 'datum',
+  sortDir = 'desc',
+  signal,
+} = {}) {
+  const normalizedEmail = String(email || '').trim();
+  if (!normalizedEmail) {
+    return { items: [], total: 0, hasMore: false };
+  }
+
+  try {
+    const path = getPath('REACT_APP_CRM_API_ZAKAZKY_LIST_PATH', 'api/protokoly-zakazky-list');
+    const query = buildQuery({
+      email: normalizedEmail,
+      technicianEmail: String(technicianEmail || '').trim(),
+      search: String(search || '').trim(),
+      page,
+      pageSize,
+      sortBy,
+      sortDir,
+      includeTotal: true,
+    });
+    const raw = await request(`${path}${query}`, { method: 'GET', signal });
+    return unwrapPagedResponse(raw, page, pageSize);
+  } catch (error) {
+    if (isBadRequest(error)) {
+      const items = await fetchJobsEnhanced({
+        email: normalizedEmail,
+        technicianEmail,
+        page,
+        pageSize,
+        sortBy,
+        sortDir,
+        signal,
+      });
+      return { items, total: null, hasMore: items.length >= pageSize };
+    }
+    throw error;
+  }
 }
 
 async function fetchLegacyJobsByEmail(email) {

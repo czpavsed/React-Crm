@@ -21,9 +21,13 @@ const Layout = () => {
     const dispatch = useDispatch()
 
     useEffect(() => {
-        const themeClass = localStorage.getItem('themeMode') || 'theme-mode-light'
+        const persistedTheme = localStorage.getItem('themeMode')
+        const themeClass = persistedTheme || 'theme-mode-dark'
         const colorClass = 'theme-color-orange'
 
+        if (!persistedTheme) {
+            localStorage.setItem('themeMode', themeClass)
+        }
         localStorage.setItem('colorMode', colorClass)
 
         dispatch(ThemeAction.setMode(themeClass))
@@ -37,13 +41,15 @@ const Layout = () => {
                 <BrowserRouter>
                     <Route render={(props) => (
                         <div className={`layout ${themeReducer.mode} ${themeReducer.color} ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-                            <Sidebar {...props} collapsed={sidebarCollapsed} />
+                            <Sidebar
+                                {...props}
+                                collapsed={sidebarCollapsed}
+                                onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+                            />
                             <div className="layout__content">
                                 <TopNav
                                     email={email}
                                     onSignOut={signOut}
-                                    sidebarCollapsed={sidebarCollapsed}
-                                    onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
                                 />
                                 <div className="layout__content-main">
                                     <Routes email={email} />
